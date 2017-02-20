@@ -3,9 +3,9 @@
 
 %% @doc Given a data structure consisting of (possibly nested) tuples/arrays/values, encode the data as a JSON string
 render({Key, Value}) ->
-  "{" ++ encode({Key, Value}) ++ "}";
+  lists:flatten("{" ++ encode({Key, Value}) ++ "}");
 render(Input) ->
-  encode(Input).
+  lists:flatten(encode(Input)).
 
 -spec encode(Input :: term()) -> list().
 %% @doc Given a data structure consisting of (possibly nested) tuples/arrays/values, encode the data as an array of
@@ -34,23 +34,22 @@ encode(A) when is_atom(A) ->
   io_lib:format("\"~p\"", [A]);
 encode({Key, Value}) ->
   encode(Key) ++ ":" ++ encode(Value);
-encode({PropList}) when is_list(PropList) ->
-  "{" ++ encode_as_array(PropList) ++ "}";
+encode({L}) when is_list(L) ->
+  "{" ++ encode_array(L) ++ "}";
 encode(L) when is_list(L) ->
   case misc_supp:is_string(L) of
     true  -> encode_as_string(L);
-    false -> "[" ++ encode_as_array(L) ++ "]"
+    false -> "[" ++ encode_array(L) ++ "]"
   end;
 encode(Value) ->
   io:format("~p", [Value]),
   {error, "Invalid Data", Value}.
 
+%% @doc Given an array of elements, encode those elements and return them as a comma-separated list of strings
+encode_array(Array) ->
+  lists:join(",", lists:map(fun(Element) -> encode(Element) end, Array)).
 
-encode_as_array(List) ->
-  EncodedElements = lists:map(fun(Element) -> encode(Element) end, List),
-  lists:flatten(lists:join(",", EncodedElements)).
-
-
+%% @doc Given a list of "characters", encode it as a quoted string
 encode_as_string(B) ->
   case is_binary(B) of
     true  ->
