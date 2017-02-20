@@ -25,7 +25,7 @@ forecast(CityList) ->
   end.
 
 
-%% @doc Listen for messages from async_weather/2 and accumulate them until all specified Cities have been accounted for
+%% @doc Listen for messages with weather API data and accumulate them until all specified Cities have been accounted for
 accumulator(ParentPid, [], State) ->
   ParentPid ! {done, State};
 accumulator(ParentPid, CityList, State) ->
