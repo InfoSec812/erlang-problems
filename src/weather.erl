@@ -12,6 +12,7 @@ forecast(CityList) ->
       order_results(CityList, CondList, [])
   end.
 
+
 %% @doc Order the results in the same order as the input city list to ensure that differences in response times from the
 %% API calls won't cause the list to be out of order.
 order_results([], _, Accumulator) ->
@@ -21,6 +22,7 @@ order_results([Head|Tail], Results, Accumulator) ->
   io:format("Appending ~s for city ~s~n", [Cond, City]),
   order_results(Tail, Results, Accumulator ++ [Cond]).
 
+
 %% @doc Spawn a process to call async_weather/2 for each City in the CityList
 forecast_weather(_, []) ->
   ok;
@@ -28,10 +30,12 @@ forecast_weather(AccumulatorPid, [Head|Tail]) ->
   spawn(weather, async_weather, [AccumulatorPid, Head]),
   forecast_weather(AccumulatorPid, Tail).
 
+
 %% @doc Call weather_api:get_weather/1 for the specified City and send the results to AccumulatorPid
 async_weather(AccumulatorPid, City) ->
   Weather = weather_api:get_weather(City),
   AccumulatorPid ! {City, Weather}.
+
 
 %% @doc Listen for messages from async_weather/2 and accumulate them until all specified Cities have been accounted for
 accumulator(ParentPid, [], State) ->
