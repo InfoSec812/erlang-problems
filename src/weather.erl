@@ -3,24 +3,16 @@
 
 forecast(CityList) ->
   % Spawn an accumulator Process
-  AccumulatorPid = spawn(weather, accumulator, [self(), CityList, []]),
+  CityCondMap = lists:map(fun(C) -> {C, null} end, CityList),
+  AccumulatorPid = spawn(weather, accumulator, [self(), CityList, CityCondMap]),
 
   % For each item in the list, launch a Process which will call the weather_api:get_weather/1 function
   lists:foreach(fun(City) -> spawn(weather, async_weather, [AccumulatorPid, City]) end, CityList),
   receive
     {done, CondList} ->
-      order_results(CityList, CondList, [])
+      {_, Conditions} = lists:unzip(CondList),
+      Conditions
   end.
-
-
-%% @doc Order the results in the same order as the input city list to ensure that differences in response times from the
-%% API calls won't cause the list to be out of order.
-order_results([], _, Accumulator) ->
-  Accumulator;
-order_results([Head|Tail], Results, Accumulator) ->
-  {City, Cond} = lists:keyfind(Head, 1, Results),
-  io:format("Appending ~s for city ~s~n", [Cond, City]),
-  order_results(Tail, Results, Accumulator ++ [Cond]).
 
 
 %% @doc Call weather_api:get_weather/1 for the specified City and send the results to AccumulatorPid
@@ -36,5 +28,5 @@ accumulator(ParentPid, CityList, State) ->
   receive
     {City, {weather, {current, _, _}, {forecast, _, Cond}}} ->
       NewCityList = lists:delete(City, CityList),
-      accumulator(ParentPid, NewCityList, State ++ [{City, Cond}])
+      accumulator(ParentPid, NewCityList, lists:keyreplace(City, 1, State, {City, Cond}))
   end.
