@@ -7,7 +7,11 @@ forecast(CityList) ->
   AccumulatorPid = spawn(weather, accumulator, [self(), CityList, CityCondMap]),
 
   % For each item in the list, launch a Process which will call the weather_api:get_weather/1 function
-  lists:foreach(fun(City) -> spawn(fun() -> AccumulatorPid ! {City, weather_api:get_weather(City)} end) end, CityList),
+  lists:foreach(fun(City) ->
+    spawn(fun() ->
+      AccumulatorPid ! {City, weather_api:get_weather(City)}
+    end)
+  end, CityList),
   receive
     {done, CondList} ->
       {_, Conditions} = lists:unzip(CondList),
