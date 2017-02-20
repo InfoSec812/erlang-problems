@@ -11,7 +11,9 @@ forecast(CityList) ->
   % For each item in the list, launch a Process which will call the weather_api:get_weather/1 function
   lists:foreach(fun(City) ->
     spawn(fun() ->
-      AccumulatorPid ! {City, weather_api:get_weather(City)}
+      % Break out the results of the weather_api call so that less information is sent over the event bus
+      {weather, {current, _, _}, {forecast, _, Cond}} = weather_api:get_weather(City),
+      AccumulatorPid ! {result, City, Cond}
     end)
   end, CityList),
 
@@ -28,7 +30,7 @@ accumulator(ParentPid, [], State) ->
   ParentPid ! {done, State};
 accumulator(ParentPid, CityList, State) ->
   receive
-    {City, {weather, {current, _, _}, {forecast, _, Cond}}} ->
+    {result, City, Cond} ->
       NewCityList = lists:delete(City, CityList),
       accumulator(ParentPid, NewCityList, lists:keyreplace(City, 1, State, {City, Cond}))
   end.
