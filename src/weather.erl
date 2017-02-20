@@ -6,7 +6,7 @@ forecast(CityList) ->
   AccumulatorPid = spawn(weather, accumulator, [self(), CityList, []]),
 
   % For each item in the list, launch a Process which will call the weather_api:get_weather/1 function
-  forecast_weather(AccumulatorPid, lists:reverse(CityList)),
+  forecast_weather(AccumulatorPid, CityList),
   receive
     {done, CondList} ->
       order_results(CityList, CondList, [])
