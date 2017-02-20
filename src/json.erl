@@ -3,9 +3,9 @@
 
 %% @doc Given a data structure consisting of (possibly nested) tuples/arrays/values, encode the data as a JSON string
 render({Key, Value}) ->
-  lists:flatten(io_lib:format("{~s}", [encode({Key, Value})]));
+  "{" ++ encode({Key, Value}) ++ "}";
 render(Input) ->
-  lists:flatten(encode(Input)).
+  encode(Input).
 
 -spec encode(Input :: term()) -> list().
 %% @doc Given a data structure consisting of (possibly nested) tuples/arrays/values, encode the data as an array of
@@ -33,31 +33,22 @@ encode(F) when is_float(F) ->
 encode(A) when is_atom(A) ->
   io_lib:format("\"~p\"", [A]);
 encode({Key, Value}) ->
-  io_lib:format("~s:~s", [encode(Key), encode(Value)]);
+  encode(Key) ++ ":" ++ encode(Value);
 encode({PropList}) when is_list(PropList) ->
-  [Head|Tail] = PropList,
-  io_lib:format("{~s}", [encode_as_array(Head, Tail)]);
-encode({PropList}) ->
-  io_lib:format("~s", [encode(PropList)]);
+  "{" ++ encode_as_array(PropList) ++ "}";
 encode(L) when is_list(L) ->
   case misc_supp:is_string(L) of
     true  -> encode_as_string(L);
-    false -> encode_as_array(L)
+    false -> "[" ++ encode_as_array(L) ++ "]"
   end;
 encode(Value) ->
   io:format("~p", [Value]),
   {error, "Invalid Data", Value}.
 
-encode_as_array([Head|Tail]) when is_tuple(Head), length(Head) == 2 ->
-  io_lib:format("~s", [encode_as_array(Head, Tail)]);
-encode_as_array([Head|Tail]) ->
-  io_lib:format("[~s]", [encode_as_array(Head, Tail)]).
 
-encode_as_array(Head, Tail) when length(Tail) == 0 ->
-  io_lib:format("~s", [encode(Head)]);
-encode_as_array(Head, Tail) ->
-  [NewHead|NewTail] = Tail,
-  io_lib:format("~s,~s", [encode(Head), encode_as_array(NewHead, NewTail)]).
+encode_as_array(List) ->
+  EncodedElements = lists:map(fun(Element) -> encode(Element) end, List),
+  lists:flatten(lists:join(",", EncodedElements)).
 
 
 encode_as_string(B) ->
