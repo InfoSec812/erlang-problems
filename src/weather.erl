@@ -30,7 +30,7 @@ async_weather(AccumulatorPid, City) ->
   AccumulatorPid ! {City, Weather}.
 
 %% @doc Listen for messages from async_weather/2 and accumulate them until all specified Cities have been accounted for
-accumulator(ParentPid, CityList, State) when length(CityList) == 0 ->
+accumulator(ParentPid, [], State) ->
   io:format("Sending results: ~p~n", [State]),
   ParentPid ! {done, State};
 accumulator(ParentPid, CityList, State) ->
