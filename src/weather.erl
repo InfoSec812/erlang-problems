@@ -1,6 +1,11 @@
 -module(weather).
 -export([forecast/1, accumulator/3, async_weather/2]).
 
+%% *********** WARNING ***********
+%% In a REAL application calling a web based API, there is no guarantee that the results will come back in the order
+%% in which they are sent... This can be addressed by using a Map instead of a List, or it is also possible to have a
+%% list of Tuples and iterate over them and use the source list to order the output.
+
 forecast(CityList) ->
   % Spawn an accumulator Process
   AccumulatorPid = spawn(weather, accumulator, [self(), CityList, []]),
