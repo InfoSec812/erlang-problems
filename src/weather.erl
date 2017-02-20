@@ -1,5 +1,5 @@
 -module(weather).
--export([forecast/1, accumulator/3, async_weather/2]).
+-export([forecast/1, accumulator/3]).
 
 forecast(CityList) ->
   % Spawn an accumulator Process
@@ -7,18 +7,12 @@ forecast(CityList) ->
   AccumulatorPid = spawn(weather, accumulator, [self(), CityList, CityCondMap]),
 
   % For each item in the list, launch a Process which will call the weather_api:get_weather/1 function
-  lists:foreach(fun(City) -> spawn(weather, async_weather, [AccumulatorPid, City]) end, CityList),
+  lists:foreach(fun(City) -> spawn(fun() -> AccumulatorPid ! {City, weather_api:get_weather(City)} end) end, CityList),
   receive
     {done, CondList} ->
       {_, Conditions} = lists:unzip(CondList),
       Conditions
   end.
-
-
-%% @doc Call weather_api:get_weather/1 for the specified City and send the results to AccumulatorPid
-async_weather(AccumulatorPid, City) ->
-  Weather = weather_api:get_weather(City),
-  AccumulatorPid ! {City, Weather}.
 
 
 %% @doc Listen for messages from async_weather/2 and accumulate them until all specified Cities have been accounted for
