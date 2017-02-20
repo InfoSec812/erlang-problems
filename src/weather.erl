@@ -2,8 +2,10 @@
 -export([forecast/1, accumulator/3]).
 
 forecast(CityList) ->
-  % Spawn an accumulator Process
+  % Build a map of city names with empty condition values
   CityCondMap = lists:map(fun(C) -> {C, null} end, CityList),
+
+  % Spawn an accumulator process to capture async results as they come in
   AccumulatorPid = spawn(weather, accumulator, [self(), CityList, CityCondMap]),
 
   % For each item in the list, launch a Process which will call the weather_api:get_weather/1 function
@@ -12,6 +14,8 @@ forecast(CityList) ->
       AccumulatorPid ! {City, weather_api:get_weather(City)}
     end)
   end, CityList),
+
+  % Await all results to come in from the accumulator
   receive
     {done, CondList} ->
       {_, Conditions} = lists:unzip(CondList),
